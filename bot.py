@@ -26,18 +26,27 @@ async def fetch_quotas(session):
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "fr-FR,fr;q=0.9,ar;q=0.8",
             "Origin": "https://adhahi.dz",
-            "Referer": "https://adhahi.dz/"
+            "Referer": "https://adhahi.dz/",
+            "X-Requested-With": "XMLHttpRequest"
         }
-        async with session.get(API_URL, headers=headers, timeout=aiohttp.ClientTimeout(total=30)) as response:
+        async with session.get(
+            API_URL,
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=60),
+            ssl=False
+        ) as response:
+            logger.info(f"API response status: {response.status}")
             if response.status == 200:
-                return await response.json()
+                return await response.json(content_type=None)
             else:
-                logger.error(f"API status: {response.status}")
+                text = await response.text()
+                logger.error(f"API status: {response.status} - {text[:200]}")
                 return None
     except Exception as e:
-        logger.error(f"Fetch error: {e}")
+        logger.error(f"Fetch error: {type(e).__name__}: {e}")
         return None
 
 
