@@ -19,12 +19,11 @@ CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "60"))
 
 API_URL = "https://adhahi.dz/api/v1/public/wilaya-quotas"
 
+# ✅ أفضل proxies جزائرية - uptime 100% و 82%
 PROXIES = [
-    "http://197.140.18.170:3128",
-    "http://193.194.66.34:8080",
-    "http://105.96.71.28:3128",
-    "http://197.201.96.123:80",
-    "http://105.96.71.114:3128",
+    "http://41.111.188.39:80",   # عين بنيان - 100% uptime
+    "http://41.111.206.167:80",  # أميزور - 82% uptime
+
 ]
 
 previous_available = {}
@@ -32,13 +31,17 @@ previous_available = {}
 
 async def fetch_quotas(session):
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "application/json, text/plain, */*",
         "Accept-Language": "fr-DZ,fr;q=0.9,ar;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br",
         "Origin": "https://adhahi.dz",
         "Referer": "https://adhahi.dz/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-origin",
     }
-    
+
     for proxy in PROXIES:
         try:
             logger.info(f"Trying proxy: {proxy}")
@@ -57,7 +60,7 @@ async def fetch_quotas(session):
         except Exception as e:
             logger.warning(f"❌ Proxy {proxy} failed: {type(e).__name__}")
             continue
-    
+
     logger.error("All proxies failed!")
     return None
 
@@ -119,7 +122,6 @@ def extract_available_wilayas(data):
 
 
 async def send_notification(bot, message):
-    # ① إرسال لك شخصياً
     try:
         await bot.send_message(
             chat_id=CHAT_ID,
@@ -131,7 +133,6 @@ async def send_notification(bot, message):
     except Exception as e:
         logger.error(f"Error sending to personal chat: {e}")
 
-    # ② إرسال للقناة — مستقل عن الأول
     if CHANNEL_ID:
         try:
             await bot.send_message(
