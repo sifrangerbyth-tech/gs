@@ -19,35 +19,47 @@ CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "60"))
 
 API_URL = "https://adhahi.dz/api/v1/public/wilaya-quotas"
 
+PROXIES = [
+    "http://197.140.18.170:3128",
+    "http://193.194.66.34:8080",
+    "http://105.96.71.28:3128",
+    "http://197.201.96.123:80",
+    "http://105.96.71.114:3128",
+]
+
 previous_available = {}
 
 
 async def fetch_quotas(session):
-    try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "fr-FR,fr;q=0.9,ar;q=0.8",
-            "Origin": "https://adhahi.dz",
-            "Referer": "https://adhahi.dz/",
-            "X-Requested-With": "XMLHttpRequest"
-        }
-        async with session.get(
-            API_URL,
-            headers=headers,
-            timeout=aiohttp.ClientTimeout(total=60),
-            ssl=False
-        ) as response:
-            logger.info(f"API response status: {response.status}")
-            if response.status == 200:
-                return await response.json(content_type=None)
-            else:
-                text = await response.text()
-                logger.error(f"API status: {response.status} - {text[:200]}")
-                return None
-    except Exception as e:
-        logger.error(f"Fetch error: {type(e).__name__}: {e}")
-        return None
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "fr-DZ,fr;q=0.9,ar;q=0.8",
+        "Origin": "https://adhahi.dz",
+        "Referer": "https://adhahi.dz/",
+    }
+    
+    for proxy in PROXIES:
+        try:
+            logger.info(f"Trying proxy: {proxy}")
+            async with session.get(
+                API_URL,
+                headers=headers,
+                proxy=proxy,
+                timeout=aiohttp.ClientTimeout(total=15),
+                ssl=False
+            ) as response:
+                if response.status == 200:
+                    logger.info(f"✅ Success with proxy: {proxy}")
+                    return await response.json(content_type=None)
+                else:
+                    logger.warning(f"❌ Proxy {proxy} returned {response.status}")
+        except Exception as e:
+            logger.warning(f"❌ Proxy {proxy} failed: {type(e).__name__}")
+            continue
+    
+    logger.error("All proxies failed!")
+    return None
 
 
 def extract_available_wilayas(data):
